@@ -3,5 +3,9 @@ main = "index.js"
 compatibility_date = "2024-01-01"
 account_id = "6bce1ffb042bcfffe0c35b914b969a26"
 
+routes = [
+  { pattern = "vosb.k12.tr/*", zone_name = "vosb.k12.tr" }
+]
+
 [vars]
 ORIGIN = "https://velikoyosb.meb.k12.tr"
