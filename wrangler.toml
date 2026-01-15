@@ -1,0 +1,6 @@
+name = "velikoyosb-proxy"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ORIGIN = "https://velikoyosb.meb.k12.tr"
