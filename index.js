@@ -52,7 +52,7 @@ export default {
     // Clone the response to read the body
     const contentType = response.headers.get('Content-Type') || '';
 
-    // Check if we need to rewrite the content
+    // Check if we need to rewrite the content (only for text-based content)
     const shouldRewrite = contentType.includes('text/html') ||
                           contentType.includes('text/javascript') ||
                           contentType.includes('application/javascript') ||
@@ -61,31 +61,37 @@ export default {
                           contentType.includes('text/xml') ||
                           contentType.includes('application/xml');
 
+    // Only rewrite successful responses
     if (shouldRewrite && response.status === 200) {
-      // Read and rewrite the content
-      const text = await response.text();
+      try {
+        // Read and rewrite the content with a timeout
+        const text = await Promise.race([
+          response.text(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Rewrite timeout')), 25000)
+          ),
+        ]);
 
-      // Replace all occurrences of the origin domain with the proxy domain
-      // Handle both http and https, with and without trailing slashes
-      let rewritten = text
-        .replace(new RegExp(origin.replace(/\./g, '\\.'), 'g'), `https://${proxyHost}`)
-        .replace(/https?:\/\/vosb\.k12\.tr/g, `https://${proxyHost}`)
-        .replace(/http:\/\/vosb\.k12\.tr/g, `https://${proxyHost}`);
+        // Replace all occurrences of the origin domain with the proxy domain
+        const rewritten = text.replace(new RegExp(origin.replace(/\./g, '\\.'), 'g'), `https://${proxyHost}`);
 
-      // Create new response with rewritten content
-      const modifiedResponse = new Response(rewritten, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      });
+        // Create new response with rewritten content
+        const modifiedResponse = new Response(rewritten, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        });
 
-      // Set CORS headers
-      modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
-      modifiedResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
-      modifiedResponse.headers.set('Access-Control-Allow-Headers', '*');
-      modifiedResponse.headers.set('Access-Control-Expose-Headers', '*');
+        // Set CORS headers
+        modifiedResponse.headers.set('Access-Control-Allow-Origin', '*');
+        modifiedResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
+        modifiedResponse.headers.set('Access-Control-Allow-Headers', '*');
+        modifiedResponse.headers.set('Access-Control-Expose-Headers', '*');
 
-      return modifiedResponse;
+        return modifiedResponse;
+      } catch (rewriteError) {
+        // If rewriting fails, fall through to regular proxy
+      }
     }
 
     // For non-text responses or errors, just proxy with CORS headers
