@@ -88,6 +88,11 @@ export default {
         modifiedResponse.headers.set('Access-Control-Allow-Headers', '*');
         modifiedResponse.headers.set('Access-Control-Expose-Headers', '*');
 
+        // Disable caching for rewritten content to ensure fresh rewrites
+        modifiedResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        modifiedResponse.headers.set('Pragma', 'no-cache');
+        modifiedResponse.headers.set('Expires', '0');
+
         return modifiedResponse;
       } catch (rewriteError) {
         // If rewriting fails, fall through to regular proxy
