@@ -1,11 +1,22 @@
-name = "velikoyosb-proxy"
+# Deployed script name is vosb-k12-tr (the old velikoyosb-proxy name was never the live one).
+name = "vosb-k12-tr"
 main = "index.js"
 compatibility_date = "2024-01-01"
 account_id = "6bce1ffb042bcfffe0c35b914b969a26"
 
+# Catch-all for the zone; vosb-api's more specific routes (/v1, /gizlilik, ...) win over this.
 routes = [
   { pattern = "vosb.k12.tr/*", zone_name = "vosb.k12.tr" }
 ]
 
-[vars]
-ORIGIN = "https://velikoyosb.meb.k12.tr"
+[observability]
+enabled = true
+
+# Shared fallback copies of text pages (see index.js header).
+[[kv_namespaces]]
+binding = "MIRROR"
+id = "62b54639efc24db99e6603a40ae7b6d2"
+
+# Keeps the home page warm in KV.
+[triggers]
+crons = ["*/10 * * * *"]
